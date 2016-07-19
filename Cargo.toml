@@ -1,0 +1,11 @@
+[package]
+name = "netlink-rs"
+version = "0.1.0"
+authors = ["crhino <piraino.chris@gmail.com>"]
+
+[dependencies]
+libc = "^0.2"
+clippy = {version = "^0.0.79", optional = true}
+
+[features]
+default = []
