@@ -168,7 +168,6 @@ impl Socket {
     }
 }
 
-
 impl Drop for Socket {
     fn drop(&mut self) {
         let _ = self.close();

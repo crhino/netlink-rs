@@ -35,10 +35,11 @@ impl NetlinkAddr {
     }
 }
 
-impl AsRef<sockaddr> for NetlinkAddr {
-    fn as_ref(&self) -> &sockaddr {
+impl NetlinkAddr {
+    fn as_sockaddr(&self) -> sockaddr {
+        let sa = self.0;
         unsafe {
-            &*(&self.0 as *const sockaddr_nl as *const sockaddr)
+            *(&sa as *const sockaddr_nl as *const sockaddr)
         }
     }
 }
@@ -65,9 +66,9 @@ mod tests {
     #[test]
     fn netlink_addr_and_sockaddr() {
         let nladdr = NetlinkAddr::new(0, 10);
-        let sockaddr = nladdr.as_ref();
+        let sockaddr = nladdr.as_sockaddr();
         assert_eq!(sockaddr.sa_family, AF_NETLINK as sa_family_t);
-        let nl2 = sockaddr_to_netlinkaddr(sockaddr);
+        let nl2 = sockaddr_to_netlinkaddr(&sockaddr);
         assert_eq!(nladdr.pid(), nl2.pid());
         assert_eq!(nladdr.groups(), nl2.groups());
     }
