@@ -1,11 +1,12 @@
 use libc::{AF_NETLINK, sa_family_t, sockaddr, c_ushort};
 
 use std::mem;
+use std::io::{self, ErrorKind};
 
 use socket::{ntohl, htonl};
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct sockaddr_nl {
     pub nl_family: sa_family_t,
     nl_pad: c_ushort,
@@ -13,7 +14,7 @@ struct sockaddr_nl {
     pub nl_groups: u32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct NetlinkAddr(sockaddr_nl);
 
 impl NetlinkAddr {
@@ -33,10 +34,8 @@ impl NetlinkAddr {
     pub fn groups(&self) -> u32 {
         ntohl(self.0.nl_groups)
     }
-}
 
-impl NetlinkAddr {
-    fn as_sockaddr(&self) -> sockaddr {
+    pub fn as_sockaddr(&self) -> sockaddr {
         let sa = self.0;
         unsafe {
             *(&sa as *const sockaddr_nl as *const sockaddr)
@@ -44,16 +43,16 @@ impl NetlinkAddr {
     }
 }
 
-pub fn sockaddr_to_netlinkaddr(sa: &sockaddr) -> NetlinkAddr {
+pub fn sockaddr_to_netlinkaddr(sa: &sockaddr) -> io::Result<NetlinkAddr> {
     match sa.sa_family as i32 {
         AF_NETLINK => {
             let snl: &sockaddr_nl = unsafe { mem::transmute(sa) };
             let pid = ntohl(snl.nl_pid);
             let groups = ntohl(snl.nl_groups);
-            NetlinkAddr::new(pid, groups)
+            Ok(NetlinkAddr::new(pid, groups))
         },
         _ => {
-            unreachable!("Not supported")
+            Err(io::Error::new(ErrorKind::InvalidInput, "sockaddr is not Netlink family"))
         }
     }
 }
@@ -68,7 +67,7 @@ mod tests {
         let nladdr = NetlinkAddr::new(0, 10);
         let sockaddr = nladdr.as_sockaddr();
         assert_eq!(sockaddr.sa_family, AF_NETLINK as sa_family_t);
-        let nl2 = sockaddr_to_netlinkaddr(&sockaddr);
+        let nl2 = sockaddr_to_netlinkaddr(&sockaddr).unwrap();
         assert_eq!(nladdr.pid(), nl2.pid());
         assert_eq!(nladdr.groups(), nl2.groups());
     }

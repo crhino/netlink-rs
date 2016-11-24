@@ -2,6 +2,7 @@
 #![cfg_attr(feature="clippy", plugin(clippy))]
 
 extern crate libc;
+extern crate byteorder;
 
 pub mod socket;
 
@@ -53,12 +54,5 @@ impl Into<i32> for Protocol {
             SCSITransport => 18,
             Ecryptfs => 19,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
     }
 }

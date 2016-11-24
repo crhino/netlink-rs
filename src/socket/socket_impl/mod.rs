@@ -1,8 +1,9 @@
 #![allow(trivial_casts)]
 
-use std::iter::{repeat, };
+use std::iter::{repeat};
 use std::io::{Error, Result,};
 use std::mem;
+use std::ptr;
 use std::ops::Drop;
 use std::vec::{Vec,};
 
@@ -12,6 +13,7 @@ use libc::{
     connect, getsockname,
     close,
     listen, sendto, accept,
+    sendmsg, msghdr, iovec,
     shutdown,
 };
 
@@ -49,7 +51,7 @@ impl Socket {
         self.fd
     }
 
-        pub fn getsockname(&self) -> Result<sockaddr> {
+    pub fn getsockname(&self) -> Result<sockaddr> {
         let mut sa: sockaddr = unsafe { mem::zeroed() };
         let mut len: socklen_t = mem::size_of::<sockaddr>() as socklen_t;
         _try!(getsockname(self.fd,
@@ -90,6 +92,33 @@ impl Socket {
         Ok(sent as usize)
     }
 
+    pub fn sendmsg(&self, msg: &[u8], data: &[u8], flags: i32, sa: &sockaddr)
+            -> Result<usize> {
+        let msg = unsafe {
+            let msg_iovec = iovec {
+                iov_base: msg as *const [u8] as *mut c_void,
+                iov_len: msg.len() as size_t,
+            };
+            let data_iovec = iovec {
+                iov_base: data as *const [u8] as *mut c_void,
+                iov_len: data.len() as size_t,
+            };
+            let mut iovecs = [msg_iovec, data_iovec];
+            msghdr{
+                msg_name: sa as *const sockaddr as *mut c_void,
+                msg_namelen: sockaddr_len(),
+                msg_iov: iovecs.as_mut_ptr() as *mut iovec,
+                msg_iovlen: 2,
+                msg_control: ptr::null_mut(),
+                msg_controllen: 0,
+                msg_flags: 0,
+            }
+        };
+
+        let sent = _try!(sendmsg(self.fd, &msg as *const msghdr, flags));
+        Ok(sent as usize)
+    }
+
     /// Receives data from a remote socket and returns it with the address of the socket.
     pub fn recvfrom(&self, bytes: usize, flags: i32) -> Result<(sockaddr, Box<[u8]>)> {
         let mut a = Vec::with_capacity(bytes);
@@ -112,7 +141,8 @@ impl Socket {
         let received = _try!(
             recvfrom(self.fd, buffer.as_ptr() as *mut c_void, buffer.len() as size_t, flags,
             &mut sa as *mut sockaddr, &mut sa_len as *mut socklen_t));
-        assert_eq!(sa_len, sockaddr_len);
+        // sockaddr_nl only has 12 bytes, still fits into 16 byte sockaddr
+        assert!(sa_len <= sockaddr_len);
         Ok((sa, received as usize))
     }
 
@@ -268,6 +298,23 @@ mod tests {
         let sent = client.send("abcd".as_bytes(), 0).unwrap();
         assert_eq!(sent, 4);
 
-        thread.join();
+        thread.join().unwrap();
+    }
+
+    #[test]
+    fn sendmsg_works() {
+        let receiver = Socket::new(AF_INET, SOCK_DGRAM, 0).unwrap();
+        let sa = socketaddr_to_sockaddr("0.0.0.0:0");
+        receiver.bind(&sa).unwrap();
+        let mut address = receiver.getsockname().unwrap();
+
+        let sender = Socket::new(AF_INET, SOCK_DGRAM, 0).unwrap();
+
+        assert_eq!(sender.sendmsg(&[1,2,3,4],
+                                  &[5,6,7,8],
+                                  0,
+                                  &address).unwrap(), 8);
+        let (_, received) = receiver.recvfrom(10, 0).unwrap();
+        assert_eq!(received.len(), 8);
     }
 }
