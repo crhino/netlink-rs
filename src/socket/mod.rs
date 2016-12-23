@@ -11,7 +11,6 @@ use socket::socket_impl::Socket as SocketImpl;
 use std::mem::{size_of};
 
 use libc::{AF_NETLINK, SOCK_RAW};
-use Protocol;
 
 use std::convert::Into;
 use std::io::{self, Write, Cursor};
@@ -31,10 +30,10 @@ fn htons(hostshort: u16) -> u16 {
 
 
 /// Converts a value from network byte order to host byte order.
-#[inline]
-fn ntohs(netshort: u16) -> u16 {
-    u16::from_be(netshort)
-}
+// #[inline]
+// fn ntohs(netshort: u16) -> u16 {
+//     u16::from_be(netshort)
+// }
 
 /// Converts a value from host byte order to network byte order.
 #[inline]
@@ -203,12 +202,11 @@ impl Socket {
 
     pub fn recv<'a>(&'a mut self) -> io::Result<(NetlinkAddr, Vec<Msg<'a>>)> {
         let buffer = &mut self.buf[..];
-        let (saddr, num_bytes) = try!(self.inner.recvfrom_into(buffer, 0));
+        let (saddr, _) = try!(self.inner.recvfrom_into(buffer, 0));
         let addr = try!(sockaddr_to_netlinkaddr(&saddr));
         let mut messages = vec![];
 
         let mut n = 0;
-        let mut i = 0;
         while let Ok((msg, num_bytes)) = Msg::from_bytes(&buffer[n..]) {
             n += num_bytes;
             let t = msg.header().msg_type();
@@ -255,14 +253,14 @@ impl Socket {
 // #define NLMSG_OK(nlh,len) ((len) >= (int)sizeof(struct nlmsghdr) && \
 //                (nlh)->nlmsg_len >= sizeof(struct nlmsghdr) && \
 //                (nlh)->nlmsg_len <= (len))
-#[inline(always)]
-fn nlmsg_ok(hdr: NlMsgHeader, len: usize) -> bool {
-    let hdrsize = size_of::<NlMsgHeader>() as u32;
-    let msglen = hdr.msg_length();
-    let len32 = len as u32;
+// #[inline(always)]
+// fn nlmsg_ok(hdr: NlMsgHeader, len: usize) -> bool {
+//     let hdrsize = size_of::<NlMsgHeader>() as u32;
+//     let msglen = hdr.msg_length();
+//     let len32 = len as u32;
 
-    len32 >= hdrsize && msglen >= hdrsize && msglen <= len32
-}
+//     len32 >= hdrsize && msglen >= hdrsize && msglen <= len32
+// }
 
 // NLMSG_ALIGN()
 //       Round the length of a netlink message up to align it properly.
@@ -291,10 +289,10 @@ fn nlmsg_length(len: usize) -> usize {
 //        Return the number of bytes that a netlink message with payload
 //        of len would occupy.
 // #define NLMSG_SPACE(len) NLMSG_ALIGN(NLMSG_LENGTH(len))
-#[inline(always)]
-fn nlmsg_space(len: usize) -> usize {
-    nlmsg_align(nlmsg_length(len))
-}
+// #[inline(always)]
+// fn nlmsg_space(len: usize) -> usize {
+//     nlmsg_align(nlmsg_length(len))
+// }
 
 #[cfg(test)]
 mod tests {

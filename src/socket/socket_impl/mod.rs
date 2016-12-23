@@ -1,4 +1,6 @@
 #![allow(trivial_casts)]
+#![allow(dead_code)]
+#![allow(unused_unsafe)]
 
 use std::iter::{repeat};
 use std::io::{Error, Result,};
@@ -211,7 +213,7 @@ mod tests {
     use std::mem;
     use std::thread;
     use libc::{AF_NETLINK, SOCK_RAW,};
-    use libc::{sa_family_t, in_addr, sockaddr, sockaddr_in, AF_UNIX, AF_INET,
+    use libc::{sa_family_t, in_addr, sockaddr, sockaddr_in, AF_INET,
         SOCK_STREAM, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR};
     use std::net::{SocketAddr, ToSocketAddrs};
 
@@ -241,7 +243,7 @@ mod tests {
 
     #[test]
     fn netlink_socket_works() {
-        let socket = Socket::new(AF_NETLINK, SOCK_RAW, 0).unwrap();
+        Socket::new(AF_NETLINK, SOCK_RAW, 0).unwrap();
     }
 
     #[test]
@@ -306,7 +308,7 @@ mod tests {
         let receiver = Socket::new(AF_INET, SOCK_DGRAM, 0).unwrap();
         let sa = socketaddr_to_sockaddr("0.0.0.0:0");
         receiver.bind(&sa).unwrap();
-        let mut address = receiver.getsockname().unwrap();
+        let address = receiver.getsockname().unwrap();
 
         let sender = Socket::new(AF_INET, SOCK_DGRAM, 0).unwrap();
 
