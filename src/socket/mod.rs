@@ -81,20 +81,20 @@ impl<'a> Payload<'a> {
     }
 
     fn bytes(&self) -> io::Result<Vec<u8>> {
-        match self {
-            &Payload::None => {
+        match *self {
+            Payload::None => {
                 Ok(vec!())
             },
-            &Payload::Data(b) => {
+            Payload::Data(b) => {
                 Ok(b.into())
             },
-            &Payload::Ack(h) => {
+            Payload::Ack(h) => {
                 let mut vec = vec![];
                 try!(vec.write_u32::<NativeEndian>(0));
                 try!(vec.write(h.bytes()));
                 Ok(vec)
             },
-            &Payload::Err(h) => {
+            Payload::Err(h) => {
                 let mut vec = vec![];
                 try!(vec.write_u32::<NativeEndian>(1));
                 try!(vec.write(h.bytes()));
@@ -200,7 +200,7 @@ impl Socket {
             self.inner.sendto(bytes.as_slice(), 0, &addr.as_sockaddr())
         }
 
-    pub fn recv<'a>(&'a mut self) -> io::Result<(NetlinkAddr, Vec<Msg<'a>>)> {
+    pub fn recv(&mut self) -> io::Result<(NetlinkAddr, Vec<Msg>)> {
         let buffer = &mut self.buf[..];
         let (saddr, _) = try!(self.inner.recvfrom_into(buffer, 0));
         let addr = try!(sockaddr_to_netlinkaddr(&saddr));
@@ -265,13 +265,13 @@ impl Socket {
 // NLMSG_ALIGN()
 //       Round the length of a netlink message up to align it properly.
 // #define NLMSG_ALIGN(len) ( ((len)+NLMSG_ALIGNTO-1) & ~(NLMSG_ALIGNTO-1) )
-#[inline(always)]
+#[inline]
 fn nlmsg_align(len: usize) -> usize {
     (len + (NLMSG_ALIGNTO - 1)) & !(NLMSG_ALIGNTO - 1)
 }
 
 // #define NLMSG_HDRLEN     ((int) NLMSG_ALIGN(sizeof(struct nlmsghdr)))
-#[inline(always)]
+#[inline]
 fn nlmsg_header_length() -> usize {
     nlmsg_align(size_of::<NlMsgHeader>())
 }
@@ -280,7 +280,7 @@ fn nlmsg_header_length() -> usize {
 //        Given the payload length, len, this macro returns the aligned
 //        length to store in the nlmsg_len field of the nlmsghdr.
 // #define NLMSG_LENGTH(len) ((len)+NLMSG_ALIGN(NLMSG_HDRLEN))
-#[inline(always)]
+#[inline]
 fn nlmsg_length(len: usize) -> usize {
     len + nlmsg_align(nlmsg_header_length())
 }

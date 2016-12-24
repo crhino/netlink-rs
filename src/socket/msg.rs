@@ -191,7 +191,7 @@ impl NlMsgHeader {
         }, cursor.position() as usize))
     }
 
-    pub fn bytes<'a>(&'a self) -> &'a [u8] {
+    pub fn bytes(&self) -> &[u8] {
         let size = size_of::<NlMsgHeader>();
         unsafe {
             let head = self as *const NlMsgHeader as *const u8;

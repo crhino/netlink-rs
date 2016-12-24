@@ -6,7 +6,6 @@ authors = ["crhino <piraino.chris@gmail.com>"]
 [dependencies]
 libc = "^0.2"
 byteorder = "^0.5"
-clippy = {version = "^0.0.79", optional = true}
 
 [features]
 default = []
