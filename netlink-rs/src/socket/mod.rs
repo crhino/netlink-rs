@@ -222,45 +222,7 @@ impl Socket {
 
         Ok((addr, messages))
     }
-
-// #define NLMSG_DATA(nlh)  ((void*)(((char*)nlh) + NLMSG_LENGTH(0)))
-// #define NLMSG_NEXT(nlh,len)  ((len) -= NLMSG_ALIGN((nlh)->nlmsg_len), \
-//                   (struct nlmsghdr*)(((char*)(nlh)) + NLMSG_ALIGN((nlh)->nlmsg_len)))
-// #define NLMSG_PAYLOAD(nlh,len) ((nlh)->nlmsg_len - NLMSG_SPACE((len)))
 }
-
-/*
-       NLMSG_DATA()
-              Return a pointer to the payload associated with the passed
-              nlmsghdr.
-
-       NLMSG_NEXT()
-              Get the next nlmsghdr in a multipart message.  The caller must
-              check if the current nlmsghdr didn't have the NLMSG_DONE set—
-              this function doesn't return NULL on end.  The len argument is
-              an lvalue containing the remaining length of the message
-              buffer.  This macro decrements it by the length of the message
-              header.
-
-       NLMSG_PAYLOAD()
-              Return the length of the payload associated with the nlmsghdr.*
-
-*/
-
-// NLMSG_OK()
-//        Return true if the netlink message is not truncated and is in
-//        a form suitable for parsing.
-// #define NLMSG_OK(nlh,len) ((len) >= (int)sizeof(struct nlmsghdr) && \
-//                (nlh)->nlmsg_len >= sizeof(struct nlmsghdr) && \
-//                (nlh)->nlmsg_len <= (len))
-// #[inline(always)]
-// fn nlmsg_ok(hdr: NlMsgHeader, len: usize) -> bool {
-//     let hdrsize = size_of::<NlMsgHeader>() as u32;
-//     let msglen = hdr.msg_length();
-//     let len32 = len as u32;
-
-//     len32 >= hdrsize && msglen >= hdrsize && msglen <= len32
-// }
 
 // NLMSG_ALIGN()
 //       Round the length of a netlink message up to align it properly.
@@ -284,15 +246,6 @@ fn nlmsg_header_length() -> usize {
 fn nlmsg_length(len: usize) -> usize {
     len + nlmsg_align(nlmsg_header_length())
 }
-
-// NLMSG_SPACE()
-//        Return the number of bytes that a netlink message with payload
-//        of len would occupy.
-// #define NLMSG_SPACE(len) NLMSG_ALIGN(NLMSG_LENGTH(len))
-// #[inline(always)]
-// fn nlmsg_space(len: usize) -> usize {
-//     nlmsg_align(nlmsg_length(len))
-// }
 
 #[cfg(test)]
 mod tests {
