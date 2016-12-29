@@ -189,7 +189,13 @@ impl Socket {
         self.inner.close()
     }
 
-    pub fn send<'a>(&self, messages: Vec<Msg<'a>>, addr: &NetlinkAddr)
+    pub fn send<'a>(&self, message: Msg<'a>, addr: &NetlinkAddr)
+        -> io::Result<usize> {
+            let b = try!(message.bytes());
+            self.inner.sendto(b.as_slice(), 0, &addr.as_sockaddr())
+        }
+
+    pub fn send_multi<'a>(&self, messages: Vec<Msg<'a>>, addr: &NetlinkAddr)
         -> io::Result<usize> {
             let mut bytes = vec![];
             for m in messages {
@@ -258,6 +264,35 @@ mod tests {
     fn test_send_recv() {
         let send = Socket::new(Protocol::Usersock).unwrap();
         let mut recv = Socket::new(Protocol::Usersock).unwrap();
+        let send_addr = NetlinkAddr::new(101, 0);
+        let recv_addr = NetlinkAddr::new(102, 0);
+
+        send.bind(send_addr).unwrap();
+        recv.bind(recv_addr).unwrap();
+
+        let bytes = [0,1,2,3,4,5];
+        let mut shdr = NlMsgHeader::request();
+        shdr.data_length(6).seq(1).pid(102);
+        let msg = Msg::new(shdr, Payload::Data(&bytes));
+
+        send.send(msg, &recv_addr).unwrap();
+
+        let (ref addr, ref vec) = recv.recv().unwrap();
+        assert_eq!(vec.len(), 1);
+
+        let ref msg = vec.first().unwrap();
+        assert_eq!(addr, &send_addr);
+        if let &Payload::Data(b) = msg.payload() {
+            assert_eq!(b, &bytes);
+        } else {
+            panic!("msg is not Data enum");
+        }
+    }
+
+    #[test]
+    fn test_send_multi_recv() {
+        let send = Socket::new(Protocol::Usersock).unwrap();
+        let mut recv = Socket::new(Protocol::Usersock).unwrap();
         let send_addr = NetlinkAddr::new(99, 0);
         let recv_addr = NetlinkAddr::new(100, 0);
 
@@ -275,7 +310,7 @@ mod tests {
         donehdr.pid(100);
         let donemsg = Msg::new(donehdr, Payload::None);
 
-        send.send(vec![msg, msg2, donemsg], &recv_addr).unwrap();
+        send.send_multi(vec![msg, msg2, donemsg], &recv_addr).unwrap();
 
         let (ref addr, ref vec) = recv.recv().unwrap();
         assert_eq!(vec.len(), 2);

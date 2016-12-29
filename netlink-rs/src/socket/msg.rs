@@ -1,7 +1,7 @@
 use super::{nlmsg_length, nlmsg_header_length};
 use std::mem::{size_of};
 use std::slice::{from_raw_parts};
-use std::io::{self, Cursor};
+use std::io::{self, ErrorKind, Cursor};
 
 use byteorder::{NativeEndian, ReadBytesExt};
 
@@ -185,6 +185,7 @@ impl NlMsgHeader {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> io::Result<(NlMsgHeader, usize)> {
+        let buf_len = bytes.len() as u32;
         let mut cursor = Cursor::new(bytes);
         let len = try!(cursor.read_u32::<NativeEndian>());
         let nl_type = try!(cursor.read_u16::<NativeEndian>());
@@ -192,13 +193,17 @@ impl NlMsgHeader {
         let seq = try!(cursor.read_u32::<NativeEndian>());
         let pid = try!(cursor.read_u32::<NativeEndian>());
 
-        Ok((NlMsgHeader{
-            msg_length: len,
-            nl_type: nl_type,
-            flags: flags,
-            seq: seq,
-            pid: pid,
-        }, cursor.position() as usize))
+        if len < nlmsg_header_length() as u32 {
+            Err(io::Error::new(ErrorKind::InvalidInput, "length smaller than msg header size"))
+        } else {
+            Ok((NlMsgHeader{
+                msg_length: len,
+                nl_type: nl_type,
+                flags: flags,
+                seq: seq,
+                pid: pid,
+            }, cursor.position() as usize))
+        }
     }
 
     pub fn bytes(&self) -> &[u8] {
@@ -357,12 +362,20 @@ mod tests {
     #[test]
     fn test_decoding() {
         // Little endian only right now
-        let bytes = [20, 0, 0, 0, 0, 0, 1, 3, 1, 0, 0, 0, 9, 0, 0, 0, 1, 1, 1];
+        let bytes = [16, 0, 0, 0, 0, 0, 1, 3, 1, 0, 0, 0, 9, 0, 0, 0, 1, 1, 1];
         let mut h = NlMsgHeader::request();
-        let expected = h.data_length(4).pid(9).seq(1).dump();
+        let expected = h.data_length(0).pid(9).seq(1).dump();
 
         let (hdr, n) = NlMsgHeader::from_bytes(&bytes).unwrap();
         assert_eq!(hdr, *expected);
         assert_eq!(n, 16);
+    }
+
+    #[test]
+    fn test_decoding_error() {
+        // Little endian only right now
+        let bytes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let res = NlMsgHeader::from_bytes(&bytes);
+        assert!(res.is_err());
     }
 }
