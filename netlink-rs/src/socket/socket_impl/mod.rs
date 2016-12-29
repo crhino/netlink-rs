@@ -209,7 +209,6 @@ impl Drop for Socket {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use socket::{htons};
     use std::mem;
     use std::thread;
     use libc::{AF_NETLINK, SOCK_RAW,};
@@ -224,7 +223,7 @@ mod tests {
                 SocketAddr::V4(v4) => {
                     let mut sa: sockaddr_in = mem::zeroed();
                     sa.sin_family = AF_INET as sa_family_t;
-                    sa.sin_port = htons(v4.port());
+                    sa.sin_port = v4.port();
                     sa.sin_addr = *(&v4.ip().octets() as *const u8 as *const in_addr);
                     *(&sa as *const sockaddr_in as *const sockaddr)
                 },

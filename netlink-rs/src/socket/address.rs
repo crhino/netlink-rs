@@ -3,8 +3,6 @@ use libc::{AF_NETLINK, sa_family_t, sockaddr, c_ushort};
 use std::mem;
 use std::io::{self, ErrorKind};
 
-use socket::{ntohl, htonl};
-
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct sockaddr_nl {
@@ -22,17 +20,17 @@ impl NetlinkAddr {
         NetlinkAddr(sockaddr_nl {
             nl_family: AF_NETLINK as sa_family_t,
             nl_pad: 0,
-            nl_pid: htonl(pid),
-            nl_groups: htonl(groups),
+            nl_pid: pid,
+            nl_groups: groups,
         })
     }
 
     pub fn pid(&self) -> u32 {
-        ntohl(self.0.nl_pid)
+        self.0.nl_pid
     }
 
     pub fn groups(&self) -> u32 {
-        ntohl(self.0.nl_groups)
+        self.0.nl_groups
     }
 
     pub fn as_sockaddr(&self) -> sockaddr {
@@ -47,8 +45,8 @@ pub fn sockaddr_to_netlinkaddr(sa: &sockaddr) -> io::Result<NetlinkAddr> {
     match sa.sa_family as i32 {
         AF_NETLINK => {
             let snl: &sockaddr_nl = unsafe { mem::transmute(sa) };
-            let pid = ntohl(snl.nl_pid);
-            let groups = ntohl(snl.nl_groups);
+            let pid = snl.nl_pid;
+            let groups = snl.nl_groups;
             Ok(NetlinkAddr::new(pid, groups))
         },
         _ => {

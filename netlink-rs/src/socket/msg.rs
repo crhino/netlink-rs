@@ -185,7 +185,6 @@ impl NlMsgHeader {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> io::Result<(NlMsgHeader, usize)> {
-        let buf_len = bytes.len() as u32;
         let mut cursor = Cursor::new(bytes);
         let len = try!(cursor.read_u32::<NativeEndian>());
         let nl_type = try!(cursor.read_u16::<NativeEndian>());
