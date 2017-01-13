@@ -5,7 +5,7 @@ use std::io::{self, ErrorKind, Cursor};
 
 use byteorder::{NativeEndian, ReadBytesExt};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum MsgType {
     /// Request
     Request,
@@ -53,7 +53,7 @@ impl From<u16> for MsgType {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum Flags {
     /// It is request message.
     Request,
@@ -78,7 +78,7 @@ impl Into<u16> for Flags {
 }
 
 /// Modifiers to GET request
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum GetFlags {
     /// specify tree root
     Root,
@@ -103,7 +103,7 @@ impl Into<u16> for GetFlags {
 }
 
 /// Modifiers to NEW request
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum NewFlags {
     /// Override existing
     Replace,
