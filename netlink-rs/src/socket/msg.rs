@@ -1,6 +1,7 @@
 use super::{nlmsg_length, nlmsg_header_length};
-use std::mem::{size_of};
-use std::slice::{from_raw_parts};
+use std::fmt;
+use std::mem::size_of;
+use std::slice::from_raw_parts;
 use std::io::{self, ErrorKind, Cursor};
 
 use byteorder::{NativeEndian, ReadBytesExt};
@@ -134,13 +135,40 @@ impl Into<u16> for NewFlags {
 // __u32 nlmsg_seq;    /* Sequence number. */
 // __u32 nlmsg_pid;    /* Sender port ID. */
 #[repr(C)]
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct NlMsgHeader {
     msg_length: u32,
     nl_type: u16,
     flags: u16,
     seq: u32,
     pid: u32,
+}
+
+impl fmt::Debug for NlMsgHeader {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "<NlMsgHeader {:?} flags=[ ", MsgType::from(self.nl_type)));
+
+        // output readable flags
+        if self.flags & 1 != 0 {
+            try!(write!(f, "Request "));
+        }
+        if self.flags & 2 != 0 {
+            try!(write!(f, "Multi "));
+        }
+        if self.flags & 4 != 0 {
+            try!(write!(f, "Ack "));
+        }
+        if self.flags & 8 != 0 {
+            try!(write!(f, "Echo "));
+        }
+        if self.flags >> 4 != 0 {
+            try!(write!(f, "other({:#X})", self.flags));
+        }
+
+        try!(write!(f, "] seq={} pid={}>", self.seq, self.pid));
+
+        Ok(())
+    }
 }
 
 impl NlMsgHeader {
