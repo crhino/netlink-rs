@@ -144,14 +144,16 @@ pub struct NlMsgHeader {
 }
 
 impl NlMsgHeader {
-    pub fn user_defined(t: u16) -> NlMsgHeader {
-        NlMsgHeader {
+    pub fn user_defined(t: u16, data_length: u32) -> NlMsgHeader {
+        let mut h = NlMsgHeader {
             msg_length: nlmsg_header_length() as u32,
             nl_type: t,
             flags: Flags::Request.into(),
             seq: 0,
             pid: 0,
-        }
+        };
+        h.data_length(data_length);
+        h
     }
 
     pub fn request() -> NlMsgHeader {
