@@ -146,7 +146,10 @@ pub struct NlMsgHeader {
 
 impl fmt::Debug for NlMsgHeader {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "<NlMsgHeader {:?} flags=[ ", MsgType::from(self.nl_type)));
+        try!(write!(f,
+                    "<NlMsgHeader len={} {:?} flags=[ ",
+                    self.msg_length,
+                    MsgType::from(self.nl_type)));
 
         // output readable flags
         if self.flags & 1 != 0 {
