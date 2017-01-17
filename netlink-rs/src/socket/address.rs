@@ -1,6 +1,6 @@
 use libc::{AF_NETLINK, sa_family_t, sockaddr, c_ushort};
 
-use std::mem;
+use std::{fmt, mem};
 use std::io::{self, ErrorKind};
 
 #[repr(C)]
@@ -12,7 +12,7 @@ struct sockaddr_nl {
     pub nl_groups: u32,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct NetlinkAddr(sockaddr_nl);
 
 impl NetlinkAddr {
@@ -35,9 +35,26 @@ impl NetlinkAddr {
 
     pub fn as_sockaddr(&self) -> sockaddr {
         let sa = self.0;
-        unsafe {
-            *(&sa as *const sockaddr_nl as *const sockaddr)
+        unsafe { *(&sa as *const sockaddr_nl as *const sockaddr) }
+    }
+}
+
+impl fmt::Debug for NetlinkAddr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "<NetlinkAddr "));
+
+        // only report unusual values for nl_family and nl_pad
+        if self.0.nl_family != AF_NETLINK as sa_family_t {
+            try!(write!(f, "[nl_family: {}]", self.0.nl_family));
         }
+
+        if self.0.nl_pad != 0 {
+            try!(write!(f, "[nl_pad: {}]", self.0.nl_pad));
+        }
+
+        try!(write!(f, "pid={} groups={}>", self.0.nl_pid, self.0.nl_groups));
+
+        Ok(())
     }
 }
 
