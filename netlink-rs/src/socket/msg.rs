@@ -229,19 +229,22 @@ impl NlMsgHeader {
 
     /// Multipart message
     pub fn multipart(&mut self) -> &mut NlMsgHeader {
-        self.flags |= Flags::Multi.into();
+        let mask: u16 = Flags::Multi.into();
+        self.flags |= mask;
         self
     }
 
     /// Request acknowledgement
     pub fn ack(&mut self) -> &mut NlMsgHeader {
-        self.flags |= Flags::Ack.into();
+        let mask: u16 = Flags::Ack.into();
+        self.flags |= mask;
         self
     }
 
     /// Echo message
     pub fn echo(&mut self) -> &mut NlMsgHeader {
-        self.flags |= Flags::Echo.into();
+        let mask: u16 = Flags::Echo.into();
+        self.flags |= mask;
         self
     }
 
@@ -259,49 +262,57 @@ impl NlMsgHeader {
 
     /// Override existing
     pub fn replace(&mut self) -> &mut NlMsgHeader {
-        self.flags |= NewFlags::Replace.into();
+        let mask: u16 = NewFlags::Replace.into();
+        self.flags |= mask;
         self
     }
 
     /// Do not touch, if it exists
     pub fn excl(&mut self) -> &mut NlMsgHeader {
-        self.flags |= NewFlags::Excl.into();
+        let mask: u16 = NewFlags::Excl.into();
+        self.flags |= mask;
         self
     }
 
     /// Create, if it does not exist
     pub fn create(&mut self) -> &mut NlMsgHeader {
-        self.flags |= NewFlags::Create.into();
+        let mask: u16 = NewFlags::Create.into();
+        self.flags |= mask;
         self
     }
 
     /// Add to end of list
     pub fn append(&mut self) -> &mut NlMsgHeader {
-        self.flags |= NewFlags::Append.into();
+        let mask: u16 = NewFlags::Append.into();
+        self.flags |= mask;
         self
     }
 
     /// specify tree root
     pub fn root(&mut self) -> &mut NlMsgHeader {
-        self.flags |= GetFlags::Root.into();
+        let mask: u16 = GetFlags::Root.into();
+        self.flags |= mask;
         self
     }
 
     /// return all matching
     pub fn match_provided(&mut self) -> &mut NlMsgHeader {
-        self.flags |= GetFlags::Match.into();
+        let mask: u16 = GetFlags::Match.into();
+        self.flags |= mask;
         self
     }
 
     /// atomic GET
     pub fn atomic(&mut self) -> &mut NlMsgHeader {
-        self.flags |= GetFlags::Atomic.into();
+        let mask: u16 = GetFlags::Atomic.into();
+        self.flags |= mask;
         self
     }
 
     /// (Root|Match)
     pub fn dump(&mut self) -> &mut NlMsgHeader {
-        self.flags |= GetFlags::Dump.into();
+        let mask: u16 = GetFlags::Dump.into();
+        self.flags |= mask;
         self
     }
 }
