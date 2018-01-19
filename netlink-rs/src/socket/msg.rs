@@ -23,10 +23,10 @@ pub enum MsgType {
     UserDefined(u16),
 }
 
-impl Into<u16> for MsgType {
-    fn into(self) -> u16 {
+impl From<MsgType> for u16 {
+    fn from(msg_type: MsgType) -> u16 {
         use self::MsgType::*;
-        match self {
+        match msg_type {
             Request => 0,
             Noop => 1,
             Error => 2,
@@ -54,77 +54,44 @@ impl From<u16> for MsgType {
 }
 
 #[derive(Clone, Copy)]
+#[repr(u16)]
 enum Flags {
     /// It is request message.
-    Request,
+    Request = 1,
     /// Multipart message, terminated by NLMSG_DONE
-    Multi,
+    Multi = 2,
     /// Reply with ack, with zero or error code
-    Ack,
+    Ack = 4,
     /// Echo this request
-    Echo,
-}
-
-impl Into<u16> for Flags {
-    fn into(self) -> u16 {
-        use self::Flags::*;
-        match self {
-            Request =>  1,
-            Multi   =>  2,
-            Ack     =>  4,
-            Echo    =>  8,
-        }
-    }
+    Echo = 8,
 }
 
 /// Modifiers to GET request
 #[derive(Clone, Copy)]
+#[repr(u16)]
 enum GetFlags {
     /// specify tree root
-    Root,
+    Root = 0x100,
     /// return all matching
-    Match,
+    Match = 0x200,
     /// atomic GET
-    Atomic,
+    Atomic = 0x400,
     /// (Root|Match)
-    Dump,
-}
-
-impl Into<u16> for GetFlags {
-    fn into(self) -> u16 {
-        use self::GetFlags::*;
-        match self {
-            Root    =>  0x100,
-            Match   =>  0x200,
-            Atomic  =>  0x400,
-            Dump    =>  0x100 | 0x200,
-        }
-    }
+    Dump = 0x100 | 0x200,
 }
 
 /// Modifiers to NEW request
 #[derive(Clone, Copy)]
+#[repr(u16)]
 enum NewFlags {
     /// Override existing
-    Replace,
+    Replace = 0x100,
     /// Do not touch, if it exists
-    Excl,
+    Excl = 0x200,
     /// Create, if it does not exist
-    Create,
+    Create = 0x400,
     /// Add to end of list
-    Append,
-}
-
-impl Into<u16> for NewFlags {
-    fn into(self) -> u16 {
-        use self::NewFlags::*;
-        match self {
-            Replace =>  0x100,
-            Excl    =>  0x200,
-            Create  =>  0x400,
-            Append  =>  0x800,
-        }
-    }
+    Append = 0x800,
 }
 
 // HEADER FORMAT
@@ -148,7 +115,7 @@ impl NlMsgHeader {
         NlMsgHeader {
             msg_length: nlmsg_header_length() as u32,
             nl_type: t,
-            flags: Flags::Request.into(),
+            flags: Flags::Request as u16,
             seq: 0,
             pid: 0,
         }
@@ -158,7 +125,7 @@ impl NlMsgHeader {
         NlMsgHeader {
             msg_length: nlmsg_header_length() as u32,
             nl_type: MsgType::Request.into(),
-            flags: Flags::Request.into(),
+            flags: Flags::Request as u16,
             seq: 0,
             pid: 0,
         }
@@ -168,7 +135,7 @@ impl NlMsgHeader {
         NlMsgHeader {
             msg_length: nlmsg_header_length() as u32,
             nl_type: MsgType::Done.into(),
-            flags: Flags::Multi.into(),
+            flags: Flags::Multi as u16,
             seq: 0,
             pid: 0,
         }
@@ -229,19 +196,19 @@ impl NlMsgHeader {
 
     /// Multipart message
     pub fn multipart(&mut self) -> &mut NlMsgHeader {
-        self.flags |= Flags::Multi.into();
+        self.flags |= Flags::Multi as u16;
         self
     }
 
     /// Request acknowledgement
     pub fn ack(&mut self) -> &mut NlMsgHeader {
-        self.flags |= Flags::Ack.into();
+        self.flags |= Flags::Ack as u16;
         self
     }
 
     /// Echo message
     pub fn echo(&mut self) -> &mut NlMsgHeader {
-        self.flags |= Flags::Echo.into();
+        self.flags |= Flags::Echo as u16;
         self
     }
 
@@ -259,49 +226,49 @@ impl NlMsgHeader {
 
     /// Override existing
     pub fn replace(&mut self) -> &mut NlMsgHeader {
-        self.flags |= NewFlags::Replace.into();
+        self.flags |= NewFlags::Replace as u16;
         self
     }
 
     /// Do not touch, if it exists
     pub fn excl(&mut self) -> &mut NlMsgHeader {
-        self.flags |= NewFlags::Excl.into();
+        self.flags |= NewFlags::Excl as u16;
         self
     }
 
     /// Create, if it does not exist
     pub fn create(&mut self) -> &mut NlMsgHeader {
-        self.flags |= NewFlags::Create.into();
+        self.flags |= NewFlags::Create as u16;
         self
     }
 
     /// Add to end of list
     pub fn append(&mut self) -> &mut NlMsgHeader {
-        self.flags |= NewFlags::Append.into();
+        self.flags |= NewFlags::Append as u16;
         self
     }
 
     /// specify tree root
     pub fn root(&mut self) -> &mut NlMsgHeader {
-        self.flags |= GetFlags::Root.into();
+        self.flags |= GetFlags::Root as u16;
         self
     }
 
     /// return all matching
     pub fn match_provided(&mut self) -> &mut NlMsgHeader {
-        self.flags |= GetFlags::Match.into();
+        self.flags |= GetFlags::Match as u16;
         self
     }
 
     /// atomic GET
     pub fn atomic(&mut self) -> &mut NlMsgHeader {
-        self.flags |= GetFlags::Atomic.into();
+        self.flags |= GetFlags::Atomic as u16;
         self
     }
 
     /// (Root|Match)
     pub fn dump(&mut self) -> &mut NlMsgHeader {
-        self.flags |= GetFlags::Dump.into();
+        self.flags |= GetFlags::Dump as u16;
         self
     }
 }
